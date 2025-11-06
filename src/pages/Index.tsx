@@ -18,6 +18,15 @@ export default function Index() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
+    // Check if user was in a room and redirect back
+    const currentRoom = localStorage.getItem("currentRoom");
+    const storedUsername = localStorage.getItem("chatUsername");
+    
+    if (currentRoom && storedUsername) {
+      navigate(`/room/${currentRoom}`);
+      return;
+    }
+
     // Sign in anonymously
     signInAnonymouslyUser().catch((error) => {
       console.error("Auth error:", error);
@@ -32,7 +41,7 @@ export default function Index() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const handleJoinRoom = () => {
     if (roomCode.trim()) {
