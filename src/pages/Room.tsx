@@ -3,13 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ref, push, onValue, serverTimestamp, update, remove, set, onDisconnect } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { UsernameDialog } from "@/components/UsernameDialog";
-import { LiveDateTime } from "@/components/LiveDateTime";
 import { MessageBubble } from "@/components/MessageBubble";
+import { RoomsSidebar } from "@/components/RoomsSidebar";
+import { ChatInfoPanel } from "@/components/ChatInfoPanel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import logo from "@/assets/app-logo.png";
 
@@ -36,7 +36,8 @@ export default function Room() {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [presence, setPresence] = useState<Record<string, { username: string; typing?: boolean; lastSeen?: number }>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -261,202 +262,202 @@ export default function Room() {
     .map((p: any) => p.username);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="lg:hidden"
-              aria-label="Back"
-            >
-              <span className="material-icons">arrow_back</span>
-            </Button>
-            <img src={logo} alt="Inner Leaf logo" className="w-7 h-7" />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base md:text-lg font-semibold truncate">
-                {roomName || `Room ${roomId}`}
-              </h1>
-              <p className="text-xs md:text-sm text-muted-foreground truncate">
-                {roomId} • {username}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <LiveDateTime />
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Room settings"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <span className="material-icons">settings</span>
-            </Button>
-            <Button
-              onClick={handleLeaveRoom}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <span className="material-icons text-sm">exit_to_app</span>
-              <span className="hidden sm:inline">Leave</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex w-full">
+      {/* Left Sidebar - Rooms (Desktop) */}
+      <div className="hidden lg:block w-80 flex-shrink-0">
+        <RoomsSidebar currentRoomId={roomId} />
+      </div>
 
-      <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Room settings</SheetTitle>
-            <SheetDescription>Manage room name and see participants</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-6">
-            <section>
-              <h3 className="text-sm font-medium mb-2">Participants ({Object.keys(presence).length})</h3>
-              <div className="space-y-2 max-h-[50vh] overflow-auto pr-2">
-                {Object.values(presence || {}).map((p: any, idx: number) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.username}`} alt={p.username} className="w-8 h-8 rounded-full" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{p.username}</div>
-                      {p.typing ? (
-                        <div className="text-xs text-primary">typing…</div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">online</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-            <section className="border-t pt-4">
-              <h3 className="text-sm font-medium mb-2">Rename room</h3>
-              <div className="flex gap-2">
-                <Input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="Room name" className="flex-1" />
-                <Button onClick={async () => {
-                  if (!roomId) return;
-                  try {
-                    await update(ref(database, `rooms/${roomId}`), { name: roomName });
-                    toast.success("Room renamed");
-                  } catch (e) {
-                    toast.error("Failed to rename");
-                  }
-                }}>Save</Button>
-              </div>
-            </section>
-          </div>
+      {/* Left Sidebar - Mobile Sheet */}
+      <Sheet open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen}>
+        <SheetContent side="left" className="w-80 p-0">
+          <RoomsSidebar currentRoomId={roomId} onClose={() => setIsLeftSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
-      {/* Messages */}
-      <main className="flex-1 container mx-auto px-4 py-4 overflow-hidden flex flex-col max-w-4xl">
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4 pb-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground py-20">
-                <div className="text-center">
-                  <span className="material-icons text-5xl mb-4 opacity-50">chat_bubble_outline</span>
-                  <p>No messages yet. Start the conversation!</p>
-                </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Chat Header */}
+        <header className="bg-card border-b shadow-sm">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsLeftSidebarOpen(true)}
+                className="lg:hidden"
+                aria-label="Open rooms"
+              >
+                <span className="material-icons">menu</span>
+              </Button>
+              <img
+                src={`https://api.dicebear.com/7.x/shapes/svg?seed=${roomId}`}
+                alt={roomName}
+                className="w-9 h-9 rounded-full"
+              />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm md:text-base font-semibold truncate">
+                  {roomName || `Room ${roomId}`}
+                </h1>
+                <p className="text-xs text-muted-foreground truncate">
+                  {Object.keys(presence).length} online
+                </p>
               </div>
-            ) : (
-              messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwn={message.username === username}
-                  currentUsername={username || ""}
-                  onReact={handleReact}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onReply={handleReply}
-                />
-              ))
-            )}
-            <div ref={messagesEndRef} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Chat info"
+                onClick={() => setIsRightPanelOpen(true)}
+                className="lg:hidden"
+              >
+                <span className="material-icons">info</span>
+              </Button>
+              <Button
+                onClick={handleLeaveRoom}
+                variant="ghost"
+                size="icon"
+                className="text-destructive"
+                aria-label="Leave room"
+              >
+                <span className="material-icons">exit_to_app</span>
+              </Button>
+            </div>
           </div>
-        </ScrollArea>
+        </header>
 
-        {/* Message Input */}
-        <div className="pt-4 border-t">
-          {replyingTo && (
-            <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Replying to {replyingTo.username}
-                </p>
-                <p className="text-sm truncate">{replyingTo.text}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setReplyingTo(null)}
-              >
-                <span className="material-icons text-sm">close</span>
-              </Button>
-            </div>
-          )}
-          {editingMessageId && (
-            <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Editing message
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => {
-                  setEditingMessageId(null);
-                  setNewMessage("");
-                }}
-              >
-                <span className="material-icons text-sm">close</span>
-              </Button>
-            </div>
-          )}
-          {typingUsers.length > 0 && (
-            <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground animate-fade-in">
-              {typingUsers.slice(0, 2).map((name) => (
-                <div className="flex items-center gap-1" key={name}>
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} className="w-5 h-5 rounded-full" />
-                  <span className="font-medium">{name}</span>
+        {/* Messages */}
+        <main className="flex-1 overflow-hidden flex flex-col">
+          <ScrollArea className="flex-1 px-4">
+            <div className="max-w-4xl mx-auto space-y-4 py-4">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground py-20">
+                  <div className="text-center">
+                    <span className="material-icons text-5xl mb-4 opacity-50">chat_bubble_outline</span>
+                    <p>No messages yet. Start the conversation!</p>
+                  </div>
                 </div>
-              ))}
-              {typingUsers.length > 2 && (
-                <span>+{typingUsers.length - 2}</span>
+              ) : (
+                messages.map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwn={message.username === username}
+                    currentUsername={username || ""}
+                    onReact={handleReact}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onReply={handleReply}
+                  />
+                ))
               )}
-              <span>is typing…</span>
+              <div ref={messagesEndRef} />
             </div>
-          )}
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <Textarea
-              ref={inputRef}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 min-h-[48px] max-h-[120px] resize-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-            />
-            <Button type="submit" size="icon" className="h-12 w-12 self-end">
-              <span className="material-icons">
-                {editingMessageId ? "check" : "send"}
-              </span>
-            </Button>
-          </form>
-        </div>
-      </main>
+          </ScrollArea>
+
+          {/* Message Input */}
+          <div className="border-t bg-card px-4 py-3">
+            <div className="max-w-4xl mx-auto">
+              {replyingTo && (
+                <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Replying to {replyingTo.username}
+                    </p>
+                    <p className="text-sm truncate">{replyingTo.text}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setReplyingTo(null)}
+                  >
+                    <span className="material-icons text-sm">close</span>
+                  </Button>
+                </div>
+              )}
+              {editingMessageId && (
+                <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Editing message
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      setEditingMessageId(null);
+                      setNewMessage("");
+                    }}
+                  >
+                    <span className="material-icons text-sm">close</span>
+                  </Button>
+                </div>
+              )}
+              {typingUsers.length > 0 && (
+                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground animate-fade-in">
+                  {typingUsers.slice(0, 2).map((name) => (
+                    <div className="flex items-center gap-1" key={name}>
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`}
+                        alt={name}
+                        className="w-5 h-5 rounded-full"
+                      />
+                      <span className="font-medium">{name}</span>
+                    </div>
+                  ))}
+                  {typingUsers.length > 2 && <span>+{typingUsers.length - 2}</span>}
+                  <span>is typing…</span>
+                </div>
+              )}
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Textarea
+                  ref={inputRef}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 min-h-[48px] max-h-[120px] resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                />
+                <Button type="submit" size="icon" className="h-12 w-12 self-end">
+                  <span className="material-icons">
+                    {editingMessageId ? "check" : "send"}
+                  </span>
+                </Button>
+              </form>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Right Panel - Chat Info (Desktop) */}
+      <div className="hidden lg:block w-80 flex-shrink-0">
+        <ChatInfoPanel
+          roomId={roomId || ""}
+          roomName={roomName}
+          presence={presence}
+        />
+      </div>
+
+      {/* Right Panel - Mobile Sheet */}
+      <Sheet open={isRightPanelOpen} onOpenChange={setIsRightPanelOpen}>
+        <SheetContent side="right" className="w-80 p-0">
+          <ChatInfoPanel
+            roomId={roomId || ""}
+            roomName={roomName}
+            presence={presence}
+            onClose={() => setIsRightPanelOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
