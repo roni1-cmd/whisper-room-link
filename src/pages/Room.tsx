@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import logo from "@/assets/app-logo.png";
 
 interface Message {
   id: string;
@@ -204,20 +205,14 @@ export default function Room() {
 
       const reactions = message.reactions || {};
       const userReactions = reactions[emoji] || [];
-      
-      let updatedUsers;
-      if (userReactions.includes(username)) {
-        // Remove reaction
-        updatedUsers = userReactions.filter((u) => u !== username);
-      } else {
-        // Add reaction
-        updatedUsers = [...userReactions, username];
-      }
 
+      const updatedUsers = userReactions.includes(username)
+        ? userReactions.filter((u) => u !== username)
+        : [...userReactions, username];
+
+      const nextReactions = { ...reactions, [emoji]: updatedUsers };
       const messageRef = ref(database, `rooms/${roomId}/messages/${messageId}`);
-      await update(messageRef, {
-        [`reactions.${emoji}`]: updatedUsers,
-      });
+      await update(messageRef, { reactions: nextReactions });
     } catch (error) {
       console.error("Error reacting to message:", error);
       toast.error("Failed to add reaction");
@@ -269,17 +264,18 @@ export default function Room() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/")}
               className="lg:hidden"
+              aria-label="Back"
             >
               <span className="material-icons">arrow_back</span>
             </Button>
-            <span className="material-icons text-primary">spa</span>
+            <img src={logo} alt="Inner Leaf logo" className="w-7 h-7" />
             <div className="min-w-0 flex-1">
               <h1 className="text-base md:text-lg font-semibold truncate">
                 {roomName || `Room ${roomId}`}

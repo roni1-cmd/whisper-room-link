@@ -9,6 +9,7 @@ import { RoomCard } from "@/components/RoomCard";
 import { CreateRoomDialog } from "@/components/CreateRoomDialog";
 import { LiveDateTime } from "@/components/LiveDateTime";
 import { toast } from "sonner";
+import logo from "@/assets/app-logo.png";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -82,7 +83,7 @@ export default function Index() {
       {/* Sidebar - Hidden on mobile */}
       <aside className="hidden lg:flex lg:w-64 bg-card border-r flex-col p-4">
         <div className="flex items-center gap-3 mb-8 px-2">
-          <span className="material-icons text-primary text-3xl">spa</span>
+          <img src={logo} alt="Inner Leaf logo" className="w-8 h-8" />
           <span className="text-xl font-medium">Inner Leaf</span>
         </div>
         
@@ -120,9 +121,9 @@ export default function Index() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-card border-b px-4 md:px-6 py-3 flex items-center justify-between">
+        <header className="bg-card border-b px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="material-icons text-primary text-2xl lg:hidden">spa</span>
+            <img src={logo} alt="Inner Leaf logo" className="w-7 h-7 lg:hidden" />
             <span className="text-lg font-medium lg:hidden">Inner Leaf</span>
             <span className="hidden lg:block text-base font-medium">Inner Leaf Chat</span>
           </div>
@@ -180,14 +181,14 @@ export default function Index() {
 
             <div className="border-t my-12"></div>
 
-            {/* Active Rooms Section */}
+            {/* Your Rooms (mobile) */}
             {Object.keys(rooms).length > 0 && (
-              <div className="space-y-6">
-                <h2 className="text-xl md:text-2xl font-medium flex items-center gap-2">
-                  <span className="material-icons">groups</span>
-                  Active Rooms
+              <div className="space-y-4 lg:hidden">
+                <h2 className="text-xl font-medium flex items-center gap-2">
+                  <span className="material-icons">forum</span>
+                  Rooms
                 </h2>
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3">
                   {Object.entries(rooms).map(([roomId, roomData]) => (
                     <RoomCard
                       key={roomId}
