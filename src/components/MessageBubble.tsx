@@ -30,6 +30,10 @@ interface Message {
     username: string;
   };
   edited?: boolean;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  pinned?: boolean;
 }
 
 interface MessageBubbleProps {
@@ -40,6 +44,7 @@ interface MessageBubbleProps {
   onEdit: (messageId: string) => void;
   onDelete: (messageId: string) => void;
   onReply: (message: Message) => void;
+  onPin?: (messageId: string) => void;
 }
 
 const QUICK_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
@@ -52,6 +57,7 @@ export const MessageBubble = ({
   onEdit,
   onDelete,
   onReply,
+  onPin,
 }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false);
   const [pinActions, setPinActions] = useState(false);
@@ -110,6 +116,38 @@ export const MessageBubble = ({
             <p className="text-xs font-medium mb-1 opacity-90">
               {message.username}
             </p>
+            
+            {/* File Attachment */}
+            {message.fileUrl && (
+              <div className="mb-2">
+                {message.fileType?.startsWith('image/') ? (
+                  <img
+                    src={message.fileUrl}
+                    alt={message.fileName}
+                    className="max-w-full max-h-80 rounded-lg"
+                  />
+                ) : message.fileType?.startsWith('video/') ? (
+                  <video
+                    src={message.fileUrl}
+                    controls
+                    className="max-w-full max-h-80 rounded-lg"
+                  />
+                ) : message.fileType?.startsWith('audio/') ? (
+                  <audio src={message.fileUrl} controls className="w-full" />
+                ) : (
+                  <a
+                    href={message.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg hover:bg-muted"
+                  >
+                    <span className="material-icons text-sm">insert_drive_file</span>
+                    <span className="text-sm truncate">{message.fileName}</span>
+                  </a>
+                )}
+              </div>
+            )}
+            
             <p className="break-words">{message.text}</p>
             {message.edited && (
               <span className="text-xs opacity-70 ml-2">(edited)</span>
@@ -165,6 +203,14 @@ export const MessageBubble = ({
                     <span className="material-icons text-sm mr-2">reply</span>
                     Reply
                   </DropdownMenuItem>
+                  {onPin && (
+                    <DropdownMenuItem onClick={() => onPin(message.id)}>
+                      <span className="material-icons text-sm mr-2">
+                        {message.pinned ? "push_pin" : "push_pin"}
+                      </span>
+                      {message.pinned ? "Unpin" : "Pin"}
+                    </DropdownMenuItem>
+                  )}
                   {isOwn && (
                     <>
                       <DropdownMenuItem onClick={() => onEdit(message.id)}>

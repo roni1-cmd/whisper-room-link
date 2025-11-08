@@ -25,6 +25,10 @@ interface Message {
     username: string;
   };
   edited?: boolean;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  pinned?: boolean;
 }
 
 export default function Room() {
@@ -39,8 +43,12 @@ export default function Room() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [presence, setPresence] = useState<Record<string, { username: string; typing?: boolean; lastSeen?: number }>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const clientIdRef = useRef<string | null>(null);
 
   // Load username from localStorage on mount
@@ -82,6 +90,10 @@ export default function Room() {
           reactions: msg.reactions || {},
           replyTo: msg.replyTo,
           edited: msg.edited || false,
+          fileUrl: msg.fileUrl,
+          fileName: msg.fileName,
+          fileType: msg.fileType,
+          pinned: msg.pinned || false,
         }));
         setMessages(messagesList.sort((a, b) => a.timestamp - b.timestamp));
       } else {
@@ -252,6 +264,64 @@ export default function Room() {
     navigate("/");
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !username || !roomId) return;
+
+    try {
+      setUploadingFile(true);
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${roomId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-files')
+        .getPublicUrl(filePath);
+
+      const messagesRef = ref(database, `rooms/${roomId}/messages`);
+      await push(messagesRef, {
+        text: file.type.startsWith('image/') ? '📷 Photo' : `📎 ${file.name}`,
+        username,
+        timestamp: serverTimestamp(),
+        fileUrl: publicUrl,
+        fileName: file.name,
+        fileType: file.type,
+      });
+
+      toast.success("File uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Failed to upload file");
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handlePinMessage = async (messageId: string) => {
+    if (!roomId) return;
+
+    try {
+      const message = messages.find((m) => m.id === messageId);
+      if (!message) return;
+
+      const messageRef = ref(database, `rooms/${roomId}/messages/${messageId}`);
+      await update(messageRef, { pinned: !message.pinned });
+      toast.success(message.pinned ? "Message unpinned" : "Message pinned");
+    } catch (error) {
+      console.error("Error pinning message:", error);
+      toast.error("Failed to pin message");
+    }
+  };
+
   if (!username) {
     return <UsernameDialog open={true} onSubmit={handleUsernameSubmit} />;
   }
@@ -260,6 +330,16 @@ export default function Room() {
   const typingUsers = (participantsList as any[])
     .filter((p: any) => p?.typing && p?.username !== username)
     .map((p: any) => p.username);
+
+  const filteredMessages = searchQuery
+    ? messages.filter((msg) =>
+        msg.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.username.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : messages;
+
+  const pinnedMessages = filteredMessages.filter((msg) => msg.pinned);
+  const regularMessages = filteredMessages.filter((msg) => !msg.pinned);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -308,6 +388,14 @@ export default function Room() {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Search messages"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                <span className="material-icons">search</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label="Chat info"
                 onClick={() => setIsRightPanelOpen(true)}
                 className="lg:hidden"
@@ -325,13 +413,50 @@ export default function Room() {
               </Button>
             </div>
           </div>
+          {isSearchOpen && (
+            <div className="px-4 py-2 border-t">
+              <input
+                type="text"
+                placeholder="Search messages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          )}
         </header>
 
         {/* Messages */}
         <main className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1">
             <div className="max-w-4xl mx-auto space-y-4 py-4 px-4">
-              {messages.length === 0 ? (
+              {pinnedMessages.length > 0 && (
+                <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-icons text-sm text-primary">push_pin</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Pinned Messages
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {pinnedMessages.map((message) => (
+                      <MessageBubble
+                        key={message.id}
+                        message={message}
+                        isOwn={message.username === username}
+                        currentUsername={username || ""}
+                        onReact={handleReact}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onReply={handleReply}
+                        onPin={handlePinMessage}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {regularMessages.length === 0 && pinnedMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground py-20">
                   <div className="text-center">
                     <span className="material-icons text-5xl mb-4 opacity-50">chat_bubble_outline</span>
@@ -339,7 +464,7 @@ export default function Room() {
                   </div>
                 </div>
               ) : (
-                messages.map((message) => (
+                regularMessages.map((message) => (
                   <MessageBubble
                     key={message.id}
                     message={message}
@@ -349,6 +474,7 @@ export default function Room() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onReply={handleReply}
+                    onPin={handlePinMessage}
                   />
                 ))
               )}
@@ -414,6 +540,25 @@ export default function Room() {
                 </div>
               )}
               <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-12 self-end"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingFile}
+                >
+                  <span className="material-icons">
+                    {uploadingFile ? "hourglass_empty" : "attach_file"}
+                  </span>
+                </Button>
                 <Textarea
                   ref={inputRef}
                   value={newMessage}
