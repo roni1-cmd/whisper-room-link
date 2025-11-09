@@ -12,6 +12,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { EmojiPickerComponent } from "@/components/EmojiPicker";
+import { LinkPreview } from "@/components/LinkPreview";
 
 interface Reaction {
   emoji: string;
@@ -64,6 +66,11 @@ export const MessageBubble = ({
 
   const reactions = message.reactions || {};
   const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
+
+  // Extract URLs from message text
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const urls = message.text.match(urlRegex) || [];
+  const textWithoutUrls = message.text.replace(urlRegex, "").trim();
 
   const handleReaction = (emoji: string) => {
     onReact(message.id, emoji);
@@ -148,10 +155,28 @@ export const MessageBubble = ({
               </div>
             )}
             
-            <p className="break-words">{message.text}</p>
-            {message.edited && (
-              <span className="text-xs opacity-70 ml-2">(edited)</span>
+            {textWithoutUrls && (
+              <p className="break-words whitespace-pre-wrap">
+                {textWithoutUrls}
+                {message.edited && (
+                  <span className="text-xs opacity-70 ml-2">(edited)</span>
+                )}
+              </p>
             )}
+            
+            {urls.map((url, idx) => (
+              <div key={idx} className="mt-2">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm hover:underline break-all block mb-1"
+                >
+                  {url}
+                </a>
+                <LinkPreview url={url} />
+              </div>
+            ))}
           </Card>
 
           {/* Quick Actions */}
@@ -172,7 +197,7 @@ export const MessageBubble = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="z-50 bg-popover border shadow-md w-auto p-2">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 items-center">
                     {QUICK_REACTIONS.map((emoji) => (
                       <Button
                         key={emoji}
@@ -184,6 +209,9 @@ export const MessageBubble = ({
                         {emoji}
                       </Button>
                     ))}
+                    <div className="border-l pl-1 ml-1">
+                      <EmojiPickerComponent onEmojiClick={(emoji) => handleReaction(emoji)} />
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>

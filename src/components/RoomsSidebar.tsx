@@ -16,15 +16,33 @@ export function RoomsSidebar({ currentRoomId, onClose }: RoomsSidebarProps) {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<{ [key: string]: any }>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const username = localStorage.getItem("chatUsername");
 
   useEffect(() => {
     const roomsRef = ref(database, "rooms");
     const unsubscribe = onValue(roomsRef, (snapshot) => {
       const data = snapshot.val();
       setRooms(data || {});
+      
+      // Calculate unread counts
+      if (data && username) {
+        const counts: Record<string, number> = {};
+        Object.entries(data).forEach(([roomId, roomData]: [string, any]) => {
+          const messages = roomData?.messages || {};
+          const lastRead = parseInt(localStorage.getItem(`lastRead_${roomId}`) || "0");
+          const unreadCount = Object.values(messages).filter(
+            (msg: any) => msg.timestamp > lastRead && msg.username !== username
+          ).length;
+          if (unreadCount > 0) {
+            counts[roomId] = unreadCount;
+          }
+        });
+        setUnreadCounts(counts);
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [username]);
 
   const filteredRooms = Object.entries(rooms).filter(([roomId, roomData]) => {
     const query = searchQuery.toLowerCase();
@@ -91,6 +109,11 @@ export function RoomsSidebar({ currentRoomId, onClose }: RoomsSidebarProps) {
                     alt={roomData?.name || roomId}
                     className="w-12 h-12 rounded-full"
                   />
+                  {unreadCounts[roomId] && currentRoomId !== roomId && (
+                    <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadCounts[roomId] > 9 ? "9+" : unreadCounts[roomId]}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <div className="font-medium truncate">

@@ -6,6 +6,7 @@ import { UsernameDialog } from "@/components/UsernameDialog";
 import { MessageBubble } from "@/components/MessageBubble";
 import { RoomsSidebar } from "@/components/RoomsSidebar";
 import { ChatInfoPanel } from "@/components/ChatInfoPanel";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import logo from "@/assets/app-logo.png";
 
-interface Message {
+export interface Message {
   id: string;
   text: string;
   username: string;
@@ -46,10 +47,13 @@ export default function Room() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<Record<string, number>>({});
+  const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(Date.now());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clientIdRef = useRef<string | null>(null);
+  const lastMessageCountRef = useRef<number>(0);
 
   // Load username from localStorage on mount
   useEffect(() => {
@@ -162,6 +166,28 @@ export default function Room() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Notifications for new messages
+  useEffect(() => {
+    if (messages.length > lastMessageCountRef.current && lastMessageCountRef.current > 0) {
+      const newMessages = messages.slice(lastMessageCountRef.current);
+      newMessages.forEach((msg) => {
+        if (msg.username !== username && msg.timestamp > lastReadTimestamp) {
+          toast.info(`${msg.username}: ${msg.text.slice(0, 50)}${msg.text.length > 50 ? "..." : ""}`);
+        }
+      });
+    }
+    lastMessageCountRef.current = messages.length;
+  }, [messages, username, lastReadTimestamp]);
+
+  // Mark messages as read when viewing room
+  useEffect(() => {
+    if (roomId && messages.length > 0) {
+      const latestTimestamp = messages[messages.length - 1]?.timestamp || Date.now();
+      setLastReadTimestamp(latestTimestamp);
+      localStorage.setItem(`lastRead_${roomId}`, latestTimestamp.toString());
+    }
+  }, [roomId, messages.length]);
 
   const handleUsernameSubmit = (newUsername: string) => {
     setUsername(newUsername);
@@ -303,6 +329,45 @@ export default function Room() {
     } finally {
       setUploadingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleVoiceRecording = async (audioBlob: Blob) => {
+    if (!username || !roomId) return;
+
+    try {
+      setUploadingFile(true);
+      const { supabase } = await import("@/integrations/supabase/client");
+
+      const fileName = `voice_${Date.now()}.webm`;
+      const filePath = `${roomId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-files')
+        .upload(filePath, audioBlob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-files')
+        .getPublicUrl(filePath);
+
+      const messagesRef = ref(database, `rooms/${roomId}/messages`);
+      await push(messagesRef, {
+        text: '🎤 Voice message',
+        username,
+        timestamp: serverTimestamp(),
+        fileUrl: publicUrl,
+        fileName: fileName,
+        fileType: 'audio/webm',
+      });
+
+      toast.success("Voice message sent");
+    } catch (error) {
+      console.error("Error uploading voice message:", error);
+      toast.error("Failed to send voice message");
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -559,6 +624,10 @@ export default function Room() {
                     {uploadingFile ? "hourglass_empty" : "attach_file"}
                   </span>
                 </Button>
+                <VoiceRecorder
+                  onRecordingComplete={handleVoiceRecording}
+                  disabled={uploadingFile}
+                />
                 <Textarea
                   ref={inputRef}
                   value={newMessage}
