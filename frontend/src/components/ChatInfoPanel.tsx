@@ -146,26 +146,107 @@ export function ChatInfoPanel({
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="px-3 pt-2 pb-3 space-y-2">
-              {participants.map((p: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50">
-                  <div className="relative">
-                    <img
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.username}`}
-                      alt={p.username}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{p.username}</div>
-                    {p.typing ? (
-                      <div className="text-xs text-primary">typing…</div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground">Active now</div>
+              {participants.map((p: any) => {
+                const isUserAdmin = admins?.[p.clientId] || creator === p.clientId;
+                const isUserCreator = creator === p.clientId;
+                const isMuted = mutedUsers?.[p.clientId] && mutedUsers[p.clientId].mutedUntil > Date.now();
+                const isSelf = p.clientId === currentClientId;
+
+                return (
+                  <div key={p.clientId} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50">
+                    <div className="relative">
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.username}`}
+                        alt={p.nickname || p.username}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{p.nickname || p.username}</span>
+                        {isUserCreator && (
+                          <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                            Owner
+                          </span>
+                        )}
+                        {isUserAdmin && !isUserCreator && (
+                          <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">
+                            Admin
+                          </span>
+                        )}
+                        {isMuted && (
+                          <span className="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded">
+                            Muted
+                          </span>
+                        )}
+                      </div>
+                      {p.typing ? (
+                        <div className="text-xs text-primary">typing…</div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">Active now</div>
+                      )}
+                    </div>
+                    
+                    {/* Admin Actions */}
+                    {isCurrentUserAdmin && !isSelf && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <span className="material-icons text-sm">more_vert</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {!isUserCreator && (
+                            <>
+                              {isUserAdmin ? (
+                                isCreator && (
+                                  <DropdownMenuItem onClick={() => onDemoteAdmin(p.clientId)}>
+                                    <span className="material-icons text-sm mr-2">remove_circle</span>
+                                    Remove Admin
+                                  </DropdownMenuItem>
+                                )
+                              ) : (
+                                <DropdownMenuItem onClick={() => onPromoteAdmin(p.clientId)}>
+                                  <span className="material-icons text-sm mr-2">admin_panel_settings</span>
+                                  Make Admin
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => onMuteUser(p.clientId, 2)}>
+                                <span className="material-icons text-sm mr-2">volume_off</span>
+                                Mute User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onKickUser(p.clientId)}>
+                                <span className="material-icons text-sm mr-2">exit_to_app</span>
+                                Kick User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => onBanUser(p.clientId)}
+                                className="text-destructive"
+                              >
+                                <span className="material-icons text-sm mr-2">block</span>
+                                Ban User
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+
+                    {/* Self Actions */}
+                    {isSelf && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={onChangeNickname}
+                      >
+                        <span className="material-icons text-sm">edit</span>
+                      </Button>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </CollapsibleContent>
           </Collapsible>
         </div>
