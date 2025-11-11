@@ -33,7 +33,23 @@ interface ChatInfoPanelProps {
   onChangeNickname: () => void;
 }
 
-export function ChatInfoPanel({ roomId, roomName, presence, onClose }: ChatInfoPanelProps) {
+export function ChatInfoPanel({ 
+  roomId, 
+  roomName, 
+  presence, 
+  currentClientId,
+  creator,
+  admins,
+  mutedUsers,
+  bannedUsers,
+  onClose,
+  onMuteUser,
+  onKickUser,
+  onBanUser,
+  onPromoteAdmin,
+  onDemoteAdmin,
+  onChangeNickname
+}: ChatInfoPanelProps) {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(true);
   const [editedRoomName, setEditedRoomName] = useState(roomName);
@@ -48,7 +64,13 @@ export function ChatInfoPanel({ roomId, roomName, presence, onClose }: ChatInfoP
     }
   };
 
-  const participants = Object.values(presence || {});
+  const isCurrentUserAdmin = admins?.[currentClientId] || creator === currentClientId;
+  const isCreator = creator === currentClientId;
+
+  const participants = Object.entries(presence || {}).map(([clientId, data]) => ({
+    clientId,
+    ...data,
+  }));
 
   return (
     <div className="h-full flex flex-col bg-card border-l">
