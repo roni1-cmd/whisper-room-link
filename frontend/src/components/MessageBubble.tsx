@@ -24,6 +24,7 @@ interface Message {
   id: string;
   text: string;
   username: string;
+  nickname?: string;
   timestamp: number;
   reactions?: { [emoji: string]: string[] };
   replyTo?: {
@@ -47,6 +48,7 @@ interface MessageBubbleProps {
   onDelete: (messageId: string) => void;
   onReply: (message: Message) => void;
   onPin?: (messageId: string) => void;
+  renderText?: (text: string) => React.ReactNode;
 }
 
 const QUICK_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
