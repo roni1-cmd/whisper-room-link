@@ -2,16 +2,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { ref, update } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { toast } from "sonner";
 
+interface Member {
+  username: string;
+  nickname: string;
+  typing?: boolean;
+  lastSeen?: number;
+}
+
 interface ChatInfoPanelProps {
   roomId: string;
   roomName: string;
-  presence: Record<string, { username: string; typing?: boolean; lastSeen?: number }>;
+  presence: Record<string, Member>;
+  currentClientId: string;
+  creator: string;
+  admins: Record<string, boolean>;
+  mutedUsers: Record<string, { mutedUntil: number }>;
+  bannedUsers: Record<string, boolean>;
   onClose?: () => void;
+  onMuteUser: (clientId: string, duration: number) => void;
+  onKickUser: (clientId: string) => void;
+  onBanUser: (clientId: string) => void;
+  onPromoteAdmin: (clientId: string) => void;
+  onDemoteAdmin: (clientId: string) => void;
+  onChangeNickname: () => void;
 }
 
 export function ChatInfoPanel({ roomId, roomName, presence, onClose }: ChatInfoPanelProps) {
