@@ -2,104 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Material Design 2 Design System
+   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 145 30% 95%;
-    --foreground: 158 40% 20%;
+    /* MD2 Teal/Green primary — #4CAF82 inspired */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 158 40% 20%;
+    --card-foreground: 0 0% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 158 40% 20%;
+    --popover-foreground: 0 0% 13%;
 
-    --primary: 158 26% 41%;
+    /* MD2 Primary: Teal 600 */
+    --primary: 158 45% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 145 30% 78%;
-    --secondary-foreground: 158 40% 20%;
+    /* MD2 Secondary surface */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 26%;
 
-    --muted: 143 30% 74%;
-    --muted-foreground: 158 20% 50%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 46%;
 
-    --accent: 143 30% 74%;
-    --accent-foreground: 158 40% 20%;
+    --accent: 158 45% 92%;
+    --accent-foreground: 158 45% 28%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 145 25% 85%;
-    --input: 145 25% 85%;
-    --ring: 158 26% 41%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 158 45% 42%;
 
-    --radius: 0.75rem;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(145, 30%, 78%), hsl(143, 30%, 74%));
-    --gradient-overlay: linear-gradient(180deg, hsl(145, 30%, 95%), hsl(145, 30%, 98%));
-    
-    --shadow-soft: 0 2px 8px hsl(158, 26%, 41% / 0.08);
-    --shadow-medium: 0 4px 16px hsl(158, 26%, 41% / 0.12);
-    --shadow-large: 0 8px 32px hsl(158, 26%, 41% / 0.16);
-    
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* MD2 uses 4px base radius */
+    --radius: 0.25rem;
+
+    /* MD2 Elevation shadows */
+    --md-shadow-1: 0 1px 3px hsla(0,0%,0%,0.12), 0 1px 2px hsla(0,0%,0%,0.24);
+    --md-shadow-2: 0 3px 6px hsla(0,0%,0%,0.16), 0 3px 6px hsla(0,0%,0%,0.23);
+    --md-shadow-3: 0 10px 20px hsla(0,0%,0%,0.19), 0 6px 6px hsla(0,0%,0%,0.23);
+    --md-shadow-4: 0 14px 28px hsla(0,0%,0%,0.25), 0 10px 10px hsla(0,0%,0%,0.22);
+    --md-shadow-5: 0 19px 38px hsla(0,0%,0%,0.30), 0 15px 12px hsla(0,0%,0%,0.22);
+
+    /* MD2 surface colours */
+    --md-surface: 0 0% 100%;
+    --md-on-surface: 0 0% 13%;
+    --md-surface-variant: 0 0% 96%;
 
     --sidebar-background: 0 0% 100%;
-
-    --sidebar-foreground: 158 40% 20%;
-
-    --sidebar-primary: 158 26% 41%;
-
+    --sidebar-foreground: 0 0% 13%;
+    --sidebar-primary: 158 45% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-
-    --sidebar-accent: 145 25% 92%;
-
-    --sidebar-accent-foreground: 158 40% 20%;
-
-    --sidebar-border: 145 25% 85%;
-
-    --sidebar-ring: 158 26% 41%;
+    --sidebar-accent: 158 45% 92%;
+    --sidebar-accent-foreground: 158 45% 28%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 158 45% 42%;
   }
 
   .dark {
-    --background: 158 30% 12%;
-    --foreground: 145 30% 95%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 93%;
 
-    --card: 158 30% 15%;
-    --card-foreground: 145 30% 95%;
+    --card: 0 0% 14%;
+    --card-foreground: 0 0% 93%;
 
-    --popover: 158 30% 15%;
-    --popover-foreground: 145 30% 95%;
+    --popover: 0 0% 14%;
+    --popover-foreground: 0 0% 93%;
 
-    --primary: 145 30% 78%;
-    --primary-foreground: 158 40% 20%;
+    --primary: 158 45% 55%;
+    --primary-foreground: 0 0% 10%;
 
-    --secondary: 158 26% 25%;
-    --secondary-foreground: 145 30% 95%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 80%;
 
-    --muted: 158 26% 25%;
-    --muted-foreground: 145 20% 65%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 56%;
 
-    --accent: 143 30% 35%;
-    --accent-foreground: 145 30% 95%;
+    --accent: 158 35% 22%;
+    --accent-foreground: 158 45% 80%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 145 30% 95%;
+    --destructive: 4 80% 56%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 158 26% 25%;
-    --input: 158 26% 25%;
-    --ring: 145 30% 78%;
-    --sidebar-background: 158 30% 15%;
-    --sidebar-foreground: 145 30% 95%;
-    --sidebar-primary: 145 30% 78%;
-    --sidebar-primary-foreground: 158 40% 20%;
-    --sidebar-accent: 158 26% 22%;
-    --sidebar-accent-foreground: 145 30% 95%;
-    --sidebar-border: 158 26% 25%;
-    --sidebar-ring: 145 30% 78%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 158 45% 55%;
+
+    --sidebar-background: 0 0% 14%;
+    --sidebar-foreground: 0 0% 93%;
+    --sidebar-primary: 158 45% 55%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 158 35% 22%;
+    --sidebar-accent-foreground: 158 45% 80%;
+    --sidebar-border: 0 0% 22%;
+    --sidebar-ring: 158 45% 55%;
   }
 }
 
@@ -110,7 +111,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 
@@ -128,5 +129,71 @@ All colors MUST be HSL.
     word-wrap: normal;
     direction: ltr;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* MD2 Elevation utilities */
+  .md-elevation-1 { box-shadow: var(--md-shadow-1); }
+  .md-elevation-2 { box-shadow: var(--md-shadow-2); }
+  .md-elevation-3 { box-shadow: var(--md-shadow-3); }
+  .md-elevation-4 { box-shadow: var(--md-shadow-4); }
+  .md-elevation-5 { box-shadow: var(--md-shadow-5); }
+
+  /* MD2 Ripple effect */
+  .md-ripple {
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .md-ripple::after {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.15) 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10, 10);
+    opacity: 0;
+    transition: transform 0.4s, opacity 0.8s;
+  }
+  .md-ripple:active::after {
+    transform: scale(0, 0);
+    opacity: 0.3;
+    transition: 0s;
+  }
+
+  /* MD2 Card hover */
+  .md-card {
+    box-shadow: var(--md-shadow-1);
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .md-card:hover {
+    box-shadow: var(--md-shadow-3);
+  }
+
+  /* MD2 Overline typography */
+  .md-overline {
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* MD2 FAB */
+  .md-fab {
+    box-shadow: var(--md-shadow-3);
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .md-fab:hover {
+    box-shadow: var(--md-shadow-5);
+    transform: translateY(-1px);
+  }
+  .md-fab:active {
+    box-shadow: var(--md-shadow-2);
+    transform: translateY(0);
   }
 }

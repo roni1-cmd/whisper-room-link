@@ -1,11 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ref, onValue } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import logo from "@/assets/app-logo.png";
 
 interface RoomsSidebarProps {
   currentRoomId?: string;
@@ -24,8 +23,7 @@ export function RoomsSidebar({ currentRoomId, onClose }: RoomsSidebarProps) {
     const unsubscribe = onValue(roomsRef, (snapshot) => {
       const data = snapshot.val();
       setRooms(data || {});
-      
-      // Calculate unread counts
+
       if (data && username) {
         const counts: Record<string, number> = {};
         Object.entries(data).forEach(([roomId, roomData]: [string, any]) => {
@@ -34,9 +32,7 @@ export function RoomsSidebar({ currentRoomId, onClose }: RoomsSidebarProps) {
           const unreadCount = Object.values(messages).filter(
             (msg: any) => msg.timestamp > lastRead && msg.username !== username
           ).length;
-          if (unreadCount > 0) {
-            counts[roomId] = unreadCount;
-          }
+          if (unreadCount > 0) counts[roomId] = unreadCount;
         });
         setUnreadCounts(counts);
       }
@@ -53,78 +49,84 @@ export function RoomsSidebar({ currentRoomId, onClose }: RoomsSidebarProps) {
   });
 
   return (
-    <div className="h-full flex flex-col bg-card border-r">
-      {/* Header */}
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col bg-card border-r border-border">
+      {/* MD2 App bar */}
+      <div className="px-4 pt-4 pb-2" style={{ boxShadow: "var(--md-shadow-1)" }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             {onClose && (
-              <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden">
-                <span className="material-icons">close</span>
+              <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden -ml-2">
+                <span className="material-icons text-muted-foreground">close</span>
               </Button>
             )}
-            <h2 className="text-xl font-semibold">Chats</h2>
+            <h2 className="text-lg font-medium tracking-wide text-foreground">Chats</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <span className="material-icons">home</span>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} title="Home">
+            <span className="material-icons text-muted-foreground">home</span>
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">
-            search
-          </span>
-          <Input
+        {/* MD2 Search field */}
+        <div className="relative flex items-center bg-secondary rounded-full px-4 py-2 gap-2">
+          <span className="material-icons text-muted-foreground text-lg">search</span>
+          <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Messenger"
-            className="pl-10 bg-muted/50 border-none"
+            placeholder="Search rooms"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
           />
         </div>
       </div>
 
       {/* Rooms List */}
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="py-2">
           {filteredRooms.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               No rooms found
             </div>
           ) : (
-            filteredRooms.map(([roomId, roomData]) => (
-              <button
-                key={roomId}
-                onClick={() => {
-                  navigate(`/room/${roomId}`);
-                  onClose?.();
-                }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors ${
-                  currentRoomId === roomId ? "bg-accent" : ""
-                }`}
-              >
-                <div className="relative">
-                  <img
-                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${roomId}`}
-                    alt={roomData?.name || roomId}
-                    className="w-12 h-12 rounded-full"
-                  />
-                  {unreadCounts[roomId] && currentRoomId !== roomId && (
-                    <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadCounts[roomId] > 9 ? "9+" : unreadCounts[roomId]}
+            filteredRooms.map(([roomId, roomData]) => {
+              const isActive = currentRoomId === roomId;
+              return (
+                <button
+                  key={roomId}
+                  onClick={() => {
+                    navigate(`/room/${roomId}`);
+                    onClose?.();
+                  }}
+                  className={`md-ripple w-full flex items-center gap-3 px-4 py-3 transition-colors text-left ${
+                    isActive
+                      ? "bg-accent"
+                      : "hover:bg-secondary"
+                  }`}
+                >
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={`https://api.dicebear.com/7.x/shapes/svg?seed=${roomId}`}
+                      alt={roomData?.name || roomId}
+                      className="w-12 h-12 rounded-full"
+                    />
+                    {unreadCounts[roomId] && !isActive && (
+                      <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-sm">
+                        {unreadCounts[roomId] > 9 ? "9+" : unreadCounts[roomId]}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${isActive ? "text-accent-foreground" : "text-foreground"}`}>
+                      {roomData?.name || `Room ${roomId}`}
                     </div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {roomId}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <span className="material-icons text-primary text-sm flex-shrink-0">chat_bubble</span>
                   )}
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="font-medium truncate">
-                    {roomData?.name || `Room ${roomId}`}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {roomId}
-                  </div>
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
         </div>
       </ScrollArea>

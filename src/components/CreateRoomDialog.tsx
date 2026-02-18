@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface CreateRoomDialogProps {
   open: boolean;
@@ -21,46 +19,48 @@ export const CreateRoomDialog = ({ open, onClose, onSubmit }: CreateRoomDialogPr
     }
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold">Create New Room</DialogTitle>
-          <DialogDescription>
-            Choose a name for your chat room.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="roomname">Room Name</Label>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      {/* MD2 Dialog */}
+      <div
+        className="bg-card rounded-lg w-full max-w-sm mx-4 overflow-hidden"
+        style={{ boxShadow: "var(--md-shadow-5)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 pt-6 pb-2">
+          <h2 className="text-xl font-medium text-foreground">Create New Room</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Give your chat room a name.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 pb-4">
+          <div className="mt-4">
             <Input
-              id="roomname"
-              placeholder="Enter room name"
+              placeholder="Room name"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               autoFocus
               className="h-12"
             />
           </div>
-          <div className="flex gap-2">
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 h-12"
-            >
+
+          {/* MD2 Dialog actions */}
+          <div className="flex justify-end gap-2 mt-6">
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 h-12 text-base font-medium"
-              disabled={!roomName.trim()}
-            >
+            <Button type="submit" disabled={!roomName.trim()}>
               Create
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

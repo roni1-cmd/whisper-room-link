@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,22 +14,13 @@ import {
 import { EmojiPickerComponent } from "@/components/EmojiPicker";
 import { LinkPreview } from "@/components/LinkPreview";
 
-interface Reaction {
-  emoji: string;
-  users: string[];
-}
-
 interface Message {
   id: string;
   text: string;
   username: string;
   timestamp: number;
   reactions?: { [emoji: string]: string[] };
-  replyTo?: {
-    id: string;
-    text: string;
-    username: string;
-  };
+  replyTo?: { id: string; text: string; username: string };
   edited?: boolean;
   fileUrl?: string;
   fileName?: string;
@@ -67,86 +57,91 @@ export const MessageBubble = ({
   const reactions = message.reactions || {};
   const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
 
-  // Extract URLs from message text
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const urls = message.text.match(urlRegex) || [];
   const textWithoutUrls = message.text.replace(urlRegex, "").trim();
 
-  const handleReaction = (emoji: string) => {
-    onReact(message.id, emoji);
-  };
+  const handleReaction = (emoji: string) => onReact(message.id, emoji);
+
+  const timeStr = new Date(message.timestamp).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div
       className={`flex gap-2 group ${isOwn ? "flex-row-reverse" : "flex-row"}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
-      onFocus={() => setShowActions(true)}
-      onBlur={() => setShowActions(false)}
     >
       {/* Avatar */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 self-end">
         <img
           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${message.username}`}
           alt={message.username}
           className="w-8 h-8 rounded-full"
+          style={{ boxShadow: "var(--md-shadow-1)" }}
         />
       </div>
 
       {/* Message Content */}
       <div className={`flex flex-col max-w-[70%] ${isOwn ? "items-end" : "items-start"}`}>
+        {/* Username */}
+        {!isOwn && (
+          <span className="text-xs font-medium text-muted-foreground mb-1 px-1">
+            {message.username}
+          </span>
+        )}
+
         {/* Reply Preview */}
         {message.replyTo && (
           <div
-            className={`text-xs px-3 py-1 mb-1 rounded-lg bg-muted/50 border-l-2 ${
-              isOwn ? "border-primary" : "border-accent"
+            className={`text-xs px-3 py-1.5 mb-1 rounded border-l-4 bg-secondary ${
+              isOwn ? "border-primary/60" : "border-muted-foreground/40"
             }`}
           >
-            <div className="font-medium text-muted-foreground">
-              {message.replyTo.username}
-            </div>
-            <div className="text-muted-foreground truncate">
-              {message.replyTo.text}
-            </div>
+            <div className="font-medium text-muted-foreground">{message.replyTo.username}</div>
+            <div className="text-muted-foreground truncate">{message.replyTo.text}</div>
           </div>
         )}
 
-        {/* Message Card */}
+        {/* MD2 Message bubble */}
         <div className="relative">
-          <Card
-            className={`p-3 ${
+          <div
+            className={`px-3 py-2 rounded-2xl text-sm ${
               isOwn
-                ? "bg-primary text-primary-foreground"
-                : "bg-card"
+                ? "bg-primary text-primary-foreground rounded-br-sm"
+                : "bg-card text-foreground rounded-bl-sm"
             }`}
+            style={{
+              boxShadow: isOwn
+                ? "0 1px 2px hsla(0,0%,0%,0.20)"
+                : "var(--md-shadow-1)",
+            }}
           >
-            <p className="text-xs font-medium mb-1 opacity-90">
-              {message.username}
-            </p>
-            
             {/* File Attachment */}
             {message.fileUrl && (
               <div className="mb-2">
-                {message.fileType?.startsWith('image/') ? (
+                {message.fileType?.startsWith("image/") ? (
                   <img
                     src={message.fileUrl}
                     alt={message.fileName}
-                    className="max-w-full max-h-80 rounded-lg"
+                    className="max-w-full max-h-60 rounded-xl"
                   />
-                ) : message.fileType?.startsWith('video/') ? (
+                ) : message.fileType?.startsWith("video/") ? (
                   <video
                     src={message.fileUrl}
                     controls
-                    className="max-w-full max-h-80 rounded-lg"
+                    className="max-w-full max-h-60 rounded-xl"
                   />
-                ) : message.fileType?.startsWith('audio/') ? (
+                ) : message.fileType?.startsWith("audio/") ? (
                   <audio src={message.fileUrl} controls className="w-full" />
                 ) : (
                   <a
                     href={message.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg hover:bg-muted"
+                    className="flex items-center gap-2 p-2 bg-black/10 rounded-lg hover:bg-black/20"
                   >
                     <span className="material-icons text-sm">insert_drive_file</span>
                     <span className="text-sm truncate">{message.fileName}</span>
@@ -154,103 +149,109 @@ export const MessageBubble = ({
                 )}
               </div>
             )}
-            
+
             {textWithoutUrls && (
-              <p className="break-words whitespace-pre-wrap">
+              <p className="break-words whitespace-pre-wrap leading-relaxed">
                 {textWithoutUrls}
                 {message.edited && (
-                  <span className="text-xs opacity-70 ml-2">(edited)</span>
+                  <span className="text-xs opacity-60 ml-2 italic">(edited)</span>
                 )}
               </p>
             )}
-            
+
             {urls.map((url, idx) => (
-              <div key={idx} className="mt-2">
+              <div key={idx} className="mt-1">
                 <a
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm hover:underline break-all block mb-1"
+                  className="text-xs underline break-all block mb-1 opacity-80"
                 >
                   {url}
                 </a>
                 <LinkPreview url={url} />
               </div>
             ))}
-          </Card>
 
-          {/* Quick Actions */}
+            {/* Timestamp */}
+            <p className={`text-xs mt-1 ${isOwn ? "text-primary-foreground/60 text-right" : "text-muted-foreground"}`}>
+              {timeStr}
+              {message.pinned && (
+                <span className="material-icons ml-1 text-xs" style={{ fontSize: "12px", verticalAlign: "middle" }}>
+                  push_pin
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Quick Actions — appear on hover */}
           {(showActions || pinActions) && (
             <div
-              className={`absolute top-0 flex gap-1 ${
-                isOwn ? "right-full mr-2" : "left-full ml-2"
+              className={`absolute -top-1 flex gap-0.5 ${
+                isOwn ? "right-full mr-1" : "left-full ml-1"
               }`}
             >
+              {/* Emoji */}
               <Popover onOpenChange={(open) => setPinActions(open)}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 bg-background/95 shadow-sm"
+                  <button
+                    className="md-ripple h-7 w-7 rounded-full bg-card flex items-center justify-center text-muted-foreground hover:text-foreground"
+                    style={{ boxShadow: "var(--md-shadow-2)" }}
                   >
-                    <span className="material-icons text-sm">add_reaction</span>
-                  </Button>
+                    <span className="material-icons" style={{ fontSize: "16px" }}>add_reaction</span>
+                  </button>
                 </PopoverTrigger>
-                <PopoverContent className="z-50 bg-popover border shadow-md w-auto p-2">
-                  <div className="flex gap-1 items-center">
+                <PopoverContent className="z-50 bg-popover rounded-full w-auto p-1.5 border" style={{ boxShadow: "var(--md-shadow-3)" }}>
+                  <div className="flex gap-0.5 items-center">
                     {QUICK_REACTIONS.map((emoji) => (
-                      <Button
+                      <button
                         key={emoji}
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-lg hover:scale-125 transition-transform"
+                        className="md-ripple h-8 w-8 rounded-full flex items-center justify-center text-lg hover:bg-secondary transition-colors"
                         onClick={() => handleReaction(emoji)}
                       >
                         {emoji}
-                      </Button>
+                      </button>
                     ))}
-                    <div className="border-l pl-1 ml-1">
-                      <EmojiPickerComponent onEmojiClick={(emoji) => handleReaction(emoji)} />
-                    </div>
+                    <div className="w-px h-6 bg-border mx-0.5" />
+                    <EmojiPickerComponent onEmojiClick={(emoji) => handleReaction(emoji)} />
                   </div>
                 </PopoverContent>
               </Popover>
 
+              {/* More options */}
               <DropdownMenu onOpenChange={(open) => setPinActions(open)}>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 bg-background/95 shadow-sm"
+                  <button
+                    className="md-ripple h-7 w-7 rounded-full bg-card flex items-center justify-center text-muted-foreground hover:text-foreground"
+                    style={{ boxShadow: "var(--md-shadow-2)" }}
                   >
-                    <span className="material-icons text-sm">more_horiz</span>
-                  </Button>
+                    <span className="material-icons" style={{ fontSize: "16px" }}>more_vert</span>
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="z-50 bg-popover border shadow-md" align={isOwn ? "end" : "start"}>
-                  <DropdownMenuItem onClick={() => onReply(message)}>
-                    <span className="material-icons text-sm mr-2">reply</span>
-                    Reply
+                <DropdownMenuContent
+                  className="rounded-lg border bg-popover"
+                  style={{ boxShadow: "var(--md-shadow-3)" }}
+                  align={isOwn ? "end" : "start"}
+                >
+                  <DropdownMenuItem className="md-ripple cursor-pointer" onClick={() => onReply(message)}>
+                    <span className="material-icons text-sm mr-2">reply</span> Reply
                   </DropdownMenuItem>
                   {onPin && (
-                    <DropdownMenuItem onClick={() => onPin(message.id)}>
-                      <span className="material-icons text-sm mr-2">
-                        {message.pinned ? "push_pin" : "push_pin"}
-                      </span>
+                    <DropdownMenuItem className="md-ripple cursor-pointer" onClick={() => onPin(message.id)}>
+                      <span className="material-icons text-sm mr-2">push_pin</span>
                       {message.pinned ? "Unpin" : "Pin"}
                     </DropdownMenuItem>
                   )}
                   {isOwn && (
                     <>
-                      <DropdownMenuItem onClick={() => onEdit(message.id)}>
-                        <span className="material-icons text-sm mr-2">edit</span>
-                        Edit
+                      <DropdownMenuItem className="md-ripple cursor-pointer" onClick={() => onEdit(message.id)}>
+                        <span className="material-icons text-sm mr-2">edit</span> Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        className="md-ripple cursor-pointer text-destructive"
                         onClick={() => onDelete(message.id)}
-                        className="text-destructive"
                       >
-                        <span className="material-icons text-sm mr-2">delete</span>
-                        Unsend
+                        <span className="material-icons text-sm mr-2">delete</span> Unsend
                       </DropdownMenuItem>
                     </>
                   )}
@@ -260,7 +261,7 @@ export const MessageBubble = ({
           )}
         </div>
 
-        {/* Reactions */}
+        {/* Reaction chips */}
         {reactionEntries.length > 0 && (
           <div className="flex gap-1 mt-1 flex-wrap">
             {reactionEntries.map(([emoji, users]) => {
@@ -269,11 +270,12 @@ export const MessageBubble = ({
                 <button
                   key={emoji}
                   onClick={() => handleReaction(emoji)}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+                  className={`md-ripple text-xs px-2 py-0.5 rounded-full border transition-all ${
                     hasReacted
-                      ? "bg-primary/20 border-primary"
-                      : "bg-muted border-border hover:bg-muted/80"
+                      ? "bg-primary/15 border-primary text-primary font-medium"
+                      : "bg-card border-border hover:bg-secondary"
                   }`}
+                  style={{ boxShadow: "var(--md-shadow-1)" }}
                 >
                   {emoji} {users.length}
                 </button>

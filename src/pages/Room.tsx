@@ -409,83 +409,79 @@ export default function Room() {
   return (
     <div className="h-dvh bg-background flex w-full overflow-hidden">
       {/* Left Sidebar - Rooms (Desktop) */}
-      <div className="hidden lg:block w-80 flex-shrink-0">
+      <div className="hidden lg:block w-72 flex-shrink-0">
         <RoomsSidebar currentRoomId={roomId} />
       </div>
 
       {/* Left Sidebar - Mobile Sheet */}
       <Sheet open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen}>
-        <SheetContent side="left" className="w-80 p-0">
+        <SheetContent side="left" className="w-72 p-0">
           <RoomsSidebar currentRoomId={roomId} onClose={() => setIsLeftSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        {/* Chat Header */}
-        <header className="bg-card border-b shadow-sm">
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <Button
-                variant="ghost"
-                size="icon"
+        {/* MD2 Top App Bar */}
+        <header
+          className="bg-primary text-primary-foreground flex-shrink-0"
+          style={{ boxShadow: "var(--md-shadow-2)" }}
+        >
+          <div className="h-14 px-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              <button
+                className="md-ripple lg:hidden h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/80 hover:bg-white/10"
                 onClick={() => setIsLeftSidebarOpen(true)}
-                className="lg:hidden"
                 aria-label="Open rooms"
               >
                 <span className="material-icons">menu</span>
-              </Button>
+              </button>
               <img
                 src={`https://api.dicebear.com/7.x/shapes/svg?seed=${roomId}`}
                 alt={roomName}
-                className="w-9 h-9 rounded-full"
+                className="w-9 h-9 rounded-full flex-shrink-0 ml-1"
               />
-              <div className="min-w-0 flex-1">
-                <h1 className="text-sm md:text-base font-semibold truncate">
+              <div className="min-w-0 flex-1 ml-2">
+                <h1 className="text-sm md:text-base font-medium truncate text-primary-foreground">
                   {roomName || `Room ${roomId}`}
                 </h1>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-primary-foreground/70 truncate">
                   {Object.keys(presence).length} online
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Search messages"
+            <div className="flex items-center">
+              <button
+                className="md-ripple h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/80 hover:bg-white/10"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
+                aria-label="Search"
               >
                 <span className="material-icons">search</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Chat info"
+              </button>
+              <button
+                className="md-ripple h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/80 hover:bg-white/10 lg:hidden"
                 onClick={() => setIsRightPanelOpen(true)}
-                className="lg:hidden"
+                aria-label="Chat info"
               >
-                <span className="material-icons">info</span>
-              </Button>
-              <Button
+                <span className="material-icons">info_outline</span>
+              </button>
+              <button
+                className="md-ripple h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/80 hover:bg-white/10"
                 onClick={handleLeaveRoom}
-                variant="ghost"
-                size="icon"
-                className="text-destructive"
                 aria-label="Leave room"
               >
                 <span className="material-icons">exit_to_app</span>
-              </Button>
+              </button>
             </div>
           </div>
           {isSearchOpen && (
-            <div className="px-4 py-2 border-t">
+            <div className="px-4 pb-3">
               <input
                 type="text"
                 placeholder="Search messages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-2 bg-white/15 rounded-full text-sm text-primary-foreground placeholder:text-primary-foreground/60 outline-none focus:bg-white/20 transition-colors"
               />
             </div>
           )}

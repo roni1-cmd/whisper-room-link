@@ -4,7 +4,6 @@ import { ref, onValue, set, serverTimestamp } from "firebase/database";
 import { database, signInAnonymouslyUser } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { RoomCard } from "@/components/RoomCard";
 import { CreateRoomDialog } from "@/components/CreateRoomDialog";
 import { LiveDateTime } from "@/components/LiveDateTime";
@@ -15,102 +14,80 @@ export default function Index() {
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState("");
   const [rooms, setRooms] = useState<{ [key: string]: any }>({});
-  const [activeTab, setActiveTab] = useState("rooms");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Check if user was in a room and redirect back
     const currentRoom = localStorage.getItem("currentRoom");
     const storedUsername = localStorage.getItem("chatUsername");
-    
     if (currentRoom && storedUsername) {
       navigate(`/room/${currentRoom}`);
       return;
     }
 
-    // Sign in anonymously
     signInAnonymouslyUser().catch((error) => {
       console.error("Auth error:", error);
       toast.error("Authentication failed");
     });
 
-    // Listen to all rooms
     const roomsRef = ref(database, "rooms");
     const unsubscribe = onValue(roomsRef, (snapshot) => {
       const data = snapshot.val();
       setRooms(data || {});
     });
-
     return () => unsubscribe();
   }, [navigate]);
 
   const handleJoinRoom = () => {
-    if (roomCode.trim()) {
-      navigate(`/room/${roomCode.trim()}`);
-    }
+    if (roomCode.trim()) navigate(`/room/${roomCode.trim()}`);
   };
 
   const handleCreateRoom = async (roomName: string) => {
     const newRoomId = "IL" + Math.random().toString(36).substring(2, 6).toUpperCase();
-    
-    // Create room with name in Firebase
     const roomRef = ref(database, `rooms/${newRoomId}`);
-    await set(roomRef, {
-      name: roomName,
-      createdAt: serverTimestamp(),
-    });
-    
+    await set(roomRef, { name: roomName, createdAt: serverTimestamp() });
     setCreateDialogOpen(false);
     navigate(`/room/${newRoomId}`);
   };
 
   const getRoomParticipantCount = (roomData: any) => {
     if (!roomData?.messages) return 0;
-    const usernames = new Set(
-      Object.values(roomData.messages).map((msg: any) => msg.username)
-    );
+    const usernames = new Set(Object.values(roomData.messages).map((msg: any) => msg.username));
     return usernames.size;
   };
 
   return (
     <div className="min-h-screen bg-background flex">
-      <CreateRoomDialog 
+      <CreateRoomDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={handleCreateRoom}
       />
 
-      {/* Sidebar - Hidden on mobile */}
-      <aside className="hidden lg:flex lg:w-64 bg-card border-r flex-col p-4">
-        <div className="flex items-center gap-3 mb-8 px-2">
+      {/* MD2 Navigation Drawer (desktop) */}
+      <aside className="hidden lg:flex lg:w-72 flex-col bg-card border-r border-border" style={{ boxShadow: "var(--md-shadow-1)" }}>
+        <div className="flex items-center gap-3 px-6 h-16 border-b border-border">
           <img src={logo} alt="Inner Leaf logo" className="w-8 h-8" />
-          <span className="text-xl font-medium">Inner Leaf</span>
+          <span className="text-xl font-medium tracking-wide text-foreground">Inner Leaf</span>
         </div>
-        
-        <nav className="space-y-2 flex-1 overflow-y-auto">
-          <div className="text-xs font-medium text-muted-foreground px-4 py-2 uppercase">
-            Your Rooms
-          </div>
-          
+
+        <nav className="flex-1 overflow-y-auto py-2">
+          <div className="md-overline text-muted-foreground px-6 py-3">Your Rooms</div>
+
           {Object.entries(rooms).length === 0 ? (
-            <div className="px-4 py-8 text-sm text-muted-foreground text-center">
-              No rooms yet. Create one to get started!
+            <div className="px-6 py-8 text-sm text-muted-foreground text-center">
+              No rooms yet. Create one!
             </div>
           ) : (
             Object.entries(rooms).map(([roomId, roomData]) => (
               <button
                 key={roomId}
                 onClick={() => navigate(`/room/${roomId}`)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors text-left"
+                className="md-ripple w-full flex items-center gap-4 px-6 py-3 hover:bg-secondary transition-colors text-left"
               >
-                <span className="material-icons text-primary">chat</span>
+                <span className="material-icons text-primary text-xl">chat_bubble_outline</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">
-                    {roomData.name || `Room ${roomId}`}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {roomId}
-                  </div>
+                  <div className="text-sm font-medium truncate">{roomData.name || `Room ${roomId}`}</div>
+                  <div className="text-xs text-muted-foreground truncate">{roomId}</div>
                 </div>
               </button>
             ))
@@ -119,51 +96,71 @@ export default function Index() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-card border-b px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <main className="flex-1 flex flex-col min-h-screen">
+        {/* MD2 Top App Bar */}
+        <header
+          className="bg-primary text-primary-foreground px-4 md:px-6 flex items-center justify-between flex-shrink-0"
+          style={{ height: "64px", boxShadow: "var(--md-shadow-2)" }}
+        >
+          <div className="flex items-center gap-4">
             <img src={logo} alt="Inner Leaf logo" className="w-7 h-7 lg:hidden" />
-            <span className="text-lg font-medium lg:hidden">Inner Leaf</span>
-            <span className="hidden lg:block text-base font-medium">Inner Leaf Chat</span>
+            <h1 className="text-xl font-medium tracking-wide lg:hidden">Inner Leaf</h1>
+            <h1 className="hidden lg:block text-xl font-medium tracking-wide">Inner Leaf Chat</h1>
           </div>
-          <LiveDateTime />
+          <div className="flex items-center gap-3 text-primary-foreground/80">
+            <LiveDateTime />
+          </div>
         </header>
 
-        {/* Main Content Area */}
+        {/* Content */}
         <div className="flex-1 flex items-center justify-center p-4 md:p-8">
-          <div className="w-full max-w-3xl">
-            {/* Hero Section */}
+          <div className="w-full max-w-2xl">
+            {/* Hero */}
             <div className="text-center mb-12">
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-normal text-foreground mb-4">
-                Instant chats and rooms for everyone
-              </h1>
-              <p className="text-base md:text-lg text-muted-foreground">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center" style={{ boxShadow: "var(--md-shadow-1)" }}>
+                  <img src={logo} alt="Inner Leaf" className="w-12 h-12" />
+                </div>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-normal text-foreground mb-3 tracking-tight">
+                Instant chats for everyone
+              </h2>
+              <p className="text-base text-muted-foreground">
                 Connect, collaborate, and chat from anywhere
               </p>
             </div>
 
-            {/* Action Section */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8">
+            {/* MD2 Card for actions */}
+            <div
+              className="bg-card rounded-lg p-6 mb-8"
+              style={{ boxShadow: "var(--md-shadow-2)" }}
+            >
+              {/* Create Room Row */}
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                size="lg"
-                className="h-12 px-6 gap-2 font-medium"
+                className="w-full h-12 text-sm font-medium mb-4 md-fab"
               >
                 <span className="material-icons text-xl">add</span>
-                New room
+                Create New Room
               </Button>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-none">
-                  <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    keyboard
+              <div className="flex items-center gap-3 text-muted-foreground mb-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs uppercase tracking-widest">or join existing</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Join Row */}
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xl">
+                    vpn_key
                   </span>
                   <Input
                     value={roomCode}
                     onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                    placeholder="Enter a code"
-                    className="h-12 pl-12 pr-4 w-full sm:w-64 border-2"
+                    placeholder="Room code"
+                    className="h-12 pl-12"
                     onKeyDown={(e) => e.key === "Enter" && handleJoinRoom()}
                   />
                 </div>
@@ -171,23 +168,17 @@ export default function Index() {
                   onClick={handleJoinRoom}
                   disabled={!roomCode.trim()}
                   variant="outline"
-                  size="lg"
-                  className="h-12 px-6 font-medium"
+                  className="h-12 px-6"
                 >
                   Join
                 </Button>
               </div>
             </div>
 
-            <div className="border-t my-12"></div>
-
-            {/* Your Rooms (mobile) */}
+            {/* Rooms grid (mobile) */}
             {Object.keys(rooms).length > 0 && (
-              <div className="space-y-4 lg:hidden">
-                <h2 className="text-xl font-medium flex items-center gap-2">
-                  <span className="material-icons">forum</span>
-                  Rooms
-                </h2>
+              <div className="space-y-3 lg:hidden">
+                <div className="md-overline text-muted-foreground px-1 mb-2">Recent Rooms</div>
                 <div className="grid gap-3">
                   {Object.entries(rooms).map(([roomId, roomData]) => (
                     <RoomCard
